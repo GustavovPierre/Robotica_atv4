@@ -16,6 +16,7 @@ from sensor_msgs.msg import Image, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import cormodule 
 from sensor_msgs.msg import LaserScan
+from A3_le_scan import scaneou
 
 
 
@@ -25,7 +26,7 @@ cv_image = None
 media = []
 centro = []
 atraso = 1.5E9 # 1 segundo e meio. Em nanossegundos
-distancia = None	
+dist = None	
 
 area = 0.0 # Variavel com a area do maior contorno
 
@@ -60,11 +61,6 @@ def roda_todo_frame(imagem):
 
 
 	
-def scaneou(dado):
-	global distancia
-	distancia = dado.ranges[0]
-	print(distancia)
-
 if __name__=="__main__":
 	rospy.init_node("cor")
 
@@ -90,35 +86,28 @@ if __name__=="__main__":
 				print("Centro dos vermelhos: {0}, {1}".format(centro[0], centro[1]))
 
 			
-				if (media[0] > centro[0]):
-					
-					vel = Twist()
-					vel.linear.x = 0
-					vel.angular.z = -0.1
+				if dist > 0.3:
 
-				elif (media[0] < centro[0]):
+
+					if (media[0] > centro[0]):
+						
+						vel = Twist(Vector3(0,0,0), Vector3(0,0,-0.1))
+						
+
+					elif (media[0] < centro[0]):
+						
+						vel = Twist(Vector3(0,0,0), Vector3(0,0,0.1))
 					
-					vel = Twist()
-					vel.linear.x = 0
-					vel.angular.z = 0.1
+					else:
+						vel = Twist(Vector3(0.1,0,0), Vector3(0,0,0.1))
+
+				else:
+					vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
 				
 
 				velocidade_saida.publish(vel)
 				rospy.sleep(0.1)
 
-				if distancia > 0.3:
-					vel = Twist()
-					vel.linear.x = 0.1
-					vel.angular.z = 0
-
-				else:
-
-					vel = twist()
-					vel.linear.x = 0
-					vel.angular.z = 0
-
-			velocidade_saida.publish(vel)
-			rospy.sleep(0.1)
 
 	except rospy.ROSInterruptException:
 	    print("Ocorreu uma exceção com o rospy")
