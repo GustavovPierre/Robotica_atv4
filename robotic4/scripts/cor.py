@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -- coding:utf-8 --
 
-author = ["Rachel P. B. Moraes", "Igor Montagner", "Fabio Miranda"]
+_author_ = ["Rachel P. B. Moraes", "Igor Montagner", "Fabio Miranda"]
 
 
 import rospy
@@ -14,20 +14,9 @@ from geometry_msgs.msg import Twist, Vector3, Pose
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
-import cormodule
+import cormodule 
 from sensor_msgs.msg import LaserScan
 
-#SCAN INÍCIO
-distancia=0
-
-def scaneou(dado):
-	global distancia
-	distancia=dado.ranges[0]
-	print("DISTANCIA         {}" .format(distancia))
-
-
-
-#SCAN FIM	
 
 
 bridge = CvBridge()
@@ -36,6 +25,7 @@ cv_image = None
 media = []
 centro = []
 atraso = 1.5E9 # 1 segundo e meio. Em nanossegundos
+distancia = None	
 
 area = 0.0 # Variavel com a area do maior contorno
 
@@ -49,7 +39,6 @@ def roda_todo_frame(imagem):
 	global cv_image
 	global media
 	global centro
-	global maior_area
 
 	now = rospy.get_rostime()
 	imgtime = imagem.header.stamp
@@ -70,85 +59,66 @@ def roda_todo_frame(imagem):
 		print('ex', e)
 
 
-
 	
-if __name__ =="__main__":
+def scaneou(dado):
+	global distancia
+	distancia = dado.ranges[0]
+	print(distancia)
+
+if __name__=="__main__":
 	rospy.init_node("cor")
 
 	# topico_imagem = "/kamera"
 	topico_imagem = "/camera/rgb/image_raw/compressed"
 	
-	# Para renomear a webcam
-	#   Primeiro instale o suporte https://github.com/Insper/robot19/blob/master/guides/debugar_sem_robo_opencv_melodic.md
-	#
-	#	Depois faça:
-	#	
-	#	rosrun cv_camera cv_camera_node
-	#
-	# 	rosrun topic_tools relay  /cv_camera/image_raw/compressed /kamera
-	#
-	# 
-	# Para renomear a câmera simulada do Gazebo
-	# 
-	# 	rosrun topic_tools relay  /camera/rgb/image_raw/compressed /kamera
-	# 
-	# Para renomear a câmera da Raspberry
-	# 
-	# 	rosrun topic_tools relay /raspicam_node/image/compressed /kamera
-	# 
 	recebe_scan = rospy.Subscriber("/scan", LaserScan, scaneou)
-	
+
 	recebedor = rospy.Subscriber(topico_imagem, CompressedImage, roda_todo_frame, queue_size=4, buff_size = 2**24)
 	print("Usando ", topico_imagem)
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
+
+
 	
-	b=0
+
 	try:
 
 		while not rospy.is_shutdown():
-			
-			if len(media) != 0 and len(centro) != 0 and maior_area>300:
+			vel = Twist()
+			if len(media) != 0 and len(centro) != 0:
 				print("Média dos vermelhos: {0}, {1}".format(media[0], media[1]))
-				print("Centro dos vermelhos: {0}, {1}".format(centro[0], centro[1]))			
+				print("Centro dos vermelhos: {0}, {1}".format(centro[0], centro[1]))
+
+			
+				if (media[0] > centro[0]):
+					
+					vel = Twist()
+					vel.linear.x = 0
+					vel.angular.z = -0.1
+
+				elif (media[0] < centro[0]):
+					
+					vel = Twist()
+					vel.linear.x = 0
+					vel.angular.z = 0.1
 				
-				
-				if b<100:	
-					if (media[0] > centro[0]):
-						vel = Twist(Vector3(0,0,0), Vector3(0,0,-0.05))
-						
-						
-					
-					if (media[0] < centro[0]):
-						vel = Twist(Vector3(0,0,0), Vector3(0,0,0.05))
-					
-						b+=1
-						
-				
-				elif distancia>0.4:
-					
-					if (media[0] > centro[0]):
-						vel = Twist(Vector3(0.1,0,0), Vector3(0,0,-0.05))
-						
-						
-					
-					if (media[0] < centro[0]):
-						vel = Twist(Vector3(0.1,0,0), Vector3(0,0,0.05))
-					
+
+				velocidade_saida.publish(vel)
+				rospy.sleep(0.1)
+
+				if distancia > 0.3:
+					vel = Twist()
+					vel.linear.x = 0.1
+					vel.angular.z = 0
 
 				else:
-				
-					vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
-			
 
-
-
-			else:
-				vel = Twist(Vector3(0,0,0), Vector3(0,0,0.5))
+					vel = twist()
+					vel.linear.x = 0
+					vel.angular.z = 0
 
 			velocidade_saida.publish(vel)
 			rospy.sleep(0.1)
-			
-			
+
 	except rospy.ROSInterruptException:
 	    print("Ocorreu uma exceção com o rospy")
