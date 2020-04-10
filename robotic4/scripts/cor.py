@@ -16,7 +16,7 @@ from sensor_msgs.msg import Image, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import cormodule 
 from sensor_msgs.msg import LaserScan
-from A3_le_scan import scaneou
+#from A3_le_scan import scaneou
 
 
 
@@ -60,6 +60,11 @@ def roda_todo_frame(imagem):
 	except CvBridgeError as e:
 		print('ex', e)
 
+
+def scaneou(dado):
+	global dist
+	dist = dado.ranges[0]
+	print(dist)
 
 	
 if __name__=="__main__":
