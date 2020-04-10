@@ -92,42 +92,32 @@ if __name__=="__main__":
 				print("Centro dos vermelhos: {0}, {1}".format(centro[0], centro[1]))
 
 			
-				if detection_counter < 50:
+				if detection_counter < 70:
 
 					if (media[0] > centro[0]):
 						
-						vel = Twist()
-						vel.angular.z = -0.1
+						vel = Twist(Vector3(0,0,0), Vector3(0,0,-0.1))
+					
 						
 
 					elif (media[0] < centro[0]):
 						
-						vel = Twist()
-						vel.angular.z = 0.1
+						vel = Twist(Vector3(0,0,0), Vector3(0,0,0.1))
+						
 
 						detection_counter += 1
 					
-							
-
-
 				if dist > 0.3:
 
 					if (media[0] > centro[0]):
-						vel = Twist()
-						vel.linear.x = 0.1
-						vel.angular.z = -0.1
+						vel = Twist(Vector3(0.1,0,0), Vector3(0,0,-0.1))
 
 					elif (media[0] < centro[0]):
 
-						vel = Twist()
-						vel.linear.x = 0.1
-						vel.angular.z = 0.1
-
-
-					
-					
+						vel = Twist(Vector3(0.1,0,0), Vector3(0,0,0.1))
+														
 				else:
-					
+
 					vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
 				
 
