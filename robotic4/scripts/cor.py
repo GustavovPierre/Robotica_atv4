@@ -112,13 +112,22 @@ if __name__=="__main__":
 
 				if dist > 0.3:
 
-					vel = Twist()
-					vel.linear.x = 0.1
+					if (media[0] > centro[0]):
+						vel = Twist()
+						vel.linear.x = 0.1
+						vel.angular.z = -0.1
+
+					elif (media[0] < centro[0]):
+
+						vel = Twist()
+						vel.linear.x = 0.1
+						vel.angular.z = 0.1
 
 
 					
 					
 				else:
+					
 					vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
 				
 
