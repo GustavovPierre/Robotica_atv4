@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -- coding:utf-8 --
 
-_author_ = ["Rachel P. B. Moraes", "Igor Montagner", "Fabio Miranda"]
+author = ["Rachel P. B. Moraes", "Igor Montagner", "Fabio Miranda"]
 
 
 import rospy
@@ -14,10 +14,10 @@ from geometry_msgs.msg import Twist, Vector3, Pose
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
-import cormodule 
+import cormodule
 from sensor_msgs.msg import LaserScan
-#from A3_le_scan import scaneou
 
+	
 
 
 bridge = CvBridge()
@@ -27,7 +27,6 @@ media = []
 centro = []
 atraso = 1.5E9 # 1 segundo e meio. Em nanossegundos
 dist = None
-detection_counter = 0
 
 area = 0.0 # Variavel com a area do maior contorno
 
@@ -41,6 +40,7 @@ def roda_todo_frame(imagem):
 	global cv_image
 	global media
 	global centro
+	global maior_area
 
 	now = rospy.get_rostime()
 	imgtime = imagem.header.stamp
@@ -60,11 +60,12 @@ def roda_todo_frame(imagem):
 	except CvBridgeError as e:
 		print('ex', e)
 
-
 def scaneou(dado):
 	global dist
-	dist = dado.ranges[0]
+	dist=dado.ranges[0]
 	print(dist)
+
+
 
 	
 if __name__=="__main__":
@@ -72,58 +73,46 @@ if __name__=="__main__":
 
 	# topico_imagem = "/kamera"
 	topico_imagem = "/camera/rgb/image_raw/compressed"
-	
+ 
 	recebe_scan = rospy.Subscriber("/scan", LaserScan, scaneou)
-
+	
 	recebedor = rospy.Subscriber(topico_imagem, CompressedImage, roda_todo_frame, queue_size=4, buff_size = 2**24)
 	print("Usando ", topico_imagem)
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
-
-
 	
-
 	try:
 
 		while not rospy.is_shutdown():
-			vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
-			if len(media) != 0 and len(centro) != 0:
-				print("Média dos vermelhos: {0}, {1}".format(media[0], media[1]))
-				print("Centro dos vermelhos: {0}, {1}".format(centro[0], centro[1]))
-
 			
-				if detection_counter < 70:
-
-					if (media[0] > centro[0]):
-						
-						vel = Twist(Vector3(0,0,0), Vector3(0,0,-0.1))
+			if len(media) != 0 and len(centro) != 0 and maior_area>300:
+				print("Média dos vermelhos: {0}, {1}".format(media[0], media[1]))
+				print("Centro dos vermelhos: {0}, {1}".format(centro[0], centro[1]))			
+				
+										
+				
+				if dist > 0.5:
 					
-						
-
-					elif (media[0] < centro[0]):
-						
-						vel = Twist(Vector3(0,0,0), Vector3(0,0,0.1))
-						
-
-						detection_counter += 1
-					
-				if dist > 0.3:
-
 					if (media[0] > centro[0]):
 						vel = Twist(Vector3(0.1,0,0), Vector3(0,0,-0.1))
-
-					elif (media[0] < centro[0]):
-
+										
+					if (media[0] < centro[0]):
 						vel = Twist(Vector3(0.1,0,0), Vector3(0,0,0.1))
-														
+					
+
 				else:
-
-					vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
 				
+					vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
+			
 
-				velocidade_saida.publish(vel)
-				rospy.sleep(0.1)
 
 
+			else:
+				vel = Twist(Vector3(0,0,0), Vector3(0,0,0.5))
+
+			velocidade_saida.publish(vel)
+			rospy.sleep(0.1)
+			
+			
 	except rospy.ROSInterruptException:
 	    print("Ocorreu uma exceção com o rospy")
